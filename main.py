@@ -30,7 +30,6 @@ label_logo.grid(row=1, column=0, columnspan=2, pady=10, sticky="nsew")
 canvas = None
 escala = 1.0  # Escala inicial para el zoom
 
-
 # Función para mostrar el plano de la planta
 def ingresar():
     global canvas, escala
@@ -47,23 +46,21 @@ def ingresar():
 
     dibujar_plano()
 
-    canvas.bind("<MouseWheel>", zoom)
-
 
 def dibujar_plano():
-    global canvas, escala
+    global canvas
     canvas.delete("all")  # Limpiar el canvas
 
         # Dibujar la cuadrícula
     filas = 8  # Número de filas
     columnas = 10  # Número de columnas
-    width_celda = (500 * escala - 100 * escala) / columnas
-    height_celda = (300 * escala - 100 * escala) / filas
+    width_celda = (500 - 100) / columnas
+    height_celda = (300 - 100) / filas
 
     for i in range(filas):
         for j in range(columnas):
-            x1 = 100 * escala + j * width_celda
-            y1 = 100 * escala + i * height_celda
+            x1 = 100 + j * width_celda
+            y1 = 100 + i * height_celda
             x2 = x1 + width_celda
             y2 = y1 + height_celda
             canvas.create_rectangle(x1, y1, x2, y2, outline="lightgrey", width=1, fill="white", tags=f"celda_{i}_{j}")
@@ -106,15 +103,6 @@ def dibujar_plano():
     canvas.create_oval(48 * escala, 250 * escala, 98 * escala, 300 * escala,
                        outline="blue", width=2, fill="lightblue", tags="Silo 2")
     canvas.create_text(73 * escala, 275 * escala, text="Silos 2", font=("Arial", int(8 * escala)), fill="black")
-
-def zoom(event):
-    global escala
-    if event.delta > 0:  # Rueda hacia arriba -> Zoom IN
-        escala *= 1.1
-    elif event.delta < 0:  # Rueda hacia abajo -> Zoom OUT
-        escala /= 1.1
-    dibujar_plano()  # Redibujar el plano con la nueva escala
-
 
 # Función para cargar calidad
 def calidad():
@@ -159,7 +147,6 @@ def calidad():
 
     ventana_calidad.wait_window()  # Espera a que la ventana se cierre
     return calidad_data
-
 
 # Función para cargar la información en la celda
 def cargar_informacion(i, j):
@@ -211,21 +198,24 @@ def colorear_celdas():
         # Asignar color según el grano
         if grano == "soja":
             color = "lightyellow"
-        elif grano == "poroto mung":
+        elif grano == "mung":
             color = "lightgreen"
         elif grano == "cartamo":
             color = "lightgrey"
-        elif grano == "maiz pisingallo":
+        elif grano == "pisingallo":
             color = "lightcoral"
+        else:
+            color = ''
+
 
         # Si hay un color asignado, colorear la celda
         if color:
             i, j = celda
-            x1 = 100 * escala + j * ((500 * escala - 100 * escala) / 10)  # 10 columnas
-            y1 = 100 * escala + i * ((300 * escala - 100 * escala) / 8)   # 8 filas
-            x2 = x1 + ((500 * escala - 100 * escala) / 10)
-            y2 = y1 + ((300 * escala - 100 * escala) / 8)
-            
+            x1 = 100 + j * ((500 - 100) / 10)  # 10 columnas
+            y1 = 100 + i * ((300 - 100) / 8)   # 8 filas
+            x2 = x1 + ((500 * escala - 100) / 10)
+            y2 = y1 + ((300 * escala - 100) / 8)
+
             # Dibujar un rectángulo sobre la celda con el color
             canvas.create_rectangle(x1, y1, x2, y2, outline="lightgrey", width=1, fill=color, tags=f"celda_{i}_{j}")
 
@@ -243,7 +233,7 @@ def consultar_informacion(i, j):
     # Crear la ventana de consulta de información
     ventana_consulta = tk.Toplevel(ventana)
     ventana_consulta.title(f"Consulta de Celda {i},{j}")
-    ventana_consulta.geometry("300x250")
+    ventana_consulta.geometry("300x220")
 
     # Verificar si la celda tiene información almacenada
     if (i, j) in celda_info:
@@ -258,19 +248,60 @@ def consultar_informacion(i, j):
         tk.Label(ventana_consulta, text=f"Empaque: {empaque}").pack(pady=5)
         tk.Label(ventana_consulta, text=f"Cantidad: {cantidad} Kgs").pack(pady=5)
         
+        def mover_estiba():
+            # Crear ventana para mover la estiba
+            ventana_mover = tk.Toplevel(ventana_consulta)
+            ventana_mover.title(f"Seleccionar nueva celda para {grano}")
+            ventana_mover.geometry("300x200")
+
+            tk.Label(ventana_mover, text="Celda destino:").pack(pady=5)
+
+            # Cuadro de texto para mostrar la celda seleccionada
+            cuadro_celda_destino = tk.Entry(ventana_mover, justify="center", font=("Arial", 12))
+            cuadro_celda_destino.pack(pady=10)
+
+            # Instrucción para el usuario
+            tk.Label(ventana_mover, text="Haz clic derecho sobre una celda en el plano para seleccionarla.").pack(pady=5)
+
+            # Función para mover los datos a la celda destino
+            def confirmar_movimiento():
+                destino = cuadro_celda_destino.get()  # Obtener la celda destino ingresada
+                try:
+                    destino_i, destino_j = map(int, destino.split(","))
+                    if destino_i < 0 or destino_i >= 8 or destino_j < 0 or destino_j >= 10:
+                        tk.Label(ventana_mover, text="Seleccione una celda dentro de la Planta").pack(pady=5)
+                    elif (destino_i, destino_j) not in celda_info:
+                        # Mover la información
+                        celda_info[(destino_i, destino_j)] = celda_info.pop((i, j))
+                        tk.Label(ventana_mover, text=f"Mercadería movida a la celda {destino}.").pack(pady=10)
+                        ventana_mover.after(2000, ventana_mover.destroy)
+                        ventana_consulta.destroy()
+                    else:
+                        tk.Label(ventana_mover, text="La celda de destino ya está ocupada.").pack(pady=5)
+                except ValueError:
+                    tk.Label(ventana_mover, text="Formato inválido. Usa el formato 'fila,columna'.").pack(pady=5)
+                dibujar_plano()
+                colorear_celdas()
+
+            # Botón para confirmar el movimiento
+            tk.Button(ventana_mover, text="Confirmar Movimiento", command=confirmar_movimiento).pack(pady=10)
+
+        # Botón para mover la estiba
+        tk.Button(ventana_consulta, text="Mover Estiba", command=mover_estiba).pack(pady=10)
+
         # Botón para consultar análisis de calidad
         if calidad:
             # Si tiene calidad, mostrar los detalles
+            ventana_consulta.geometry("300x350")
             tk.Label(ventana_consulta, text="Análisis de Calidad:").pack(pady=5)
             for parametro, valor in calidad.items():
                 tk.Label(ventana_consulta, text=f"{parametro}: {valor}%").pack(pady=3)
-            tk.Button(ventana_consulta, text="Cerrar", command=ventana_consulta.destroy).pack(pady=20)
+            tk.Button(ventana_consulta, text="Cerrar", command=ventana_consulta.destroy).pack(pady=10)
         else:
             # Si no tiene calidad, permitir agregarla
-            tk.Button(ventana_consulta, text="Consultar Análisis de Calidad", 
-                      command=lambda: agregar_calidad(i, j)).pack(pady=10)
             tk.Button(ventana_consulta, text="Agregar Análisis de Calidad", 
                       command=lambda: agregar_calidad(i, j)).pack(pady=10)
+            
     else:
         # Si no tiene información almacenada, mostrar un mensaje
         tk.Label(ventana_consulta, text="Esta celda no tiene información almacenada.").pack(pady=10)
