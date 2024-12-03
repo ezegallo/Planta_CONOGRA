@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 
 # Diccionario global para almacenar información de cada celda
 celda_info = {}
+silos_info = {}
 
 # Crear la ventana principal
 ventana = tk.Tk()
@@ -19,7 +20,7 @@ ventana.grid_rowconfigure(1, weight=1)
 texto_inicio = tk.Label(ventana, text="Planta CONOGRA S.A.", font=("Arial", 14), bg="white")
 texto_inicio.grid(row=0, column=0, columnspan=2, pady=20, sticky="nsew")
 
-ruta_logo = "C:/Users/Ezquiel/Desktop/Curso de Python/proyecto_final/imagenes/logo_conogra.png"
+ruta_logo = "imagenes/logo_conogra.png"
 imagen = Image.open(ruta_logo)
 imagen = imagen.resize((300, 120))
 logo = ImageTk.PhotoImage(imagen)
@@ -51,7 +52,7 @@ def dibujar_plano():
     global canvas
     canvas.delete("all")  # Limpiar el canvas
 
-        # Dibujar la cuadrícula
+    # Dibujar la cuadrícula
     filas = 8  # Número de filas
     columnas = 10  # Número de columnas
     width_celda = (500 - 100) / columnas
@@ -67,42 +68,47 @@ def dibujar_plano():
             canvas.tag_bind(f"celda_{i}_{j}", "<Button-1>", lambda event, i=i, j=j: cargar_informacion(i, j))
 
     # Dibujar el contorno del predio (área total)
-    canvas.create_rectangle(10 * escala, 50 * escala, 590 * escala, 550 * escala, outline="black", fill="", width=2)
+    canvas.create_rectangle(10, 50, 590, 550, outline="black", fill="", width=2)
 
     # Dibujar la planta dentro del predio
-    canvas.create_rectangle(100 * escala, 100 * escala, 500 * escala, 300 * escala,
+    canvas.create_rectangle(100, 100, 500, 300,
                              outline="black", width=2, fill="", tags="planta")
-    canvas.create_text(300 * escala, 80 * escala, text="Planta de Cereal", font=("Arial", int(14 * escala)), fill="black")
-    canvas.create_line(300 * escala, 100 * escala, 300 * escala, 300 * escala, fill="green", width=2, dash=(5, 2))
+    canvas.create_text(300, 80, text="Planta de Cereal", font=("Arial", int(14)), fill="black")
+    canvas.create_line(300, 100, 300, 300, fill="green", width=2, dash=(5, 2))
 
     # Dibujar la zona de maquinaria
     #Clasificadora
-    canvas.create_rectangle(180 * escala, 120 * escala, 230 * escala, 170 * escala,
+    canvas.create_rectangle(180, 120, 230, 170,
                              outline="red", width=2, fill="lightgray", tags="maquinaria")
-    canvas.create_text(205 * escala, 145 * escala, text="Clasifi\ncadora", font=("Arial", int(8 * escala)), fill="black")
+    canvas.create_text(205, 145, text="Clasifi\ncadora", font=("Arial", int(8)), fill="black")
     #Vibradora
-    canvas.create_rectangle(190 * escala, 180 * escala, 220 * escala, 220 * escala,
+    canvas.create_rectangle(190, 180, 220, 220,
                              outline="red", width=2, fill="lightgray", tags="maquinaria")
-    canvas.create_text(205 * escala, 200 * escala, text="Vibra\ndora", font=("Arial", int(8 * escala)), fill="black")
+    canvas.create_text(205, 200, text="Vibra\ndora", font=("Arial", int(8)), fill="black")
     #Oficina
-    canvas.create_rectangle(460 * escala, 250 * escala, 500 * escala, 300 * escala,
+    canvas.create_rectangle(460, 250, 500, 300,
                              outline="red", width=2, fill="lightgray", tags="maquinaria")
-    canvas.create_text(480 * escala, 275 * escala, text="Oficina", font=("Arial", int(8 * escala)), fill="black")
+    canvas.create_text(480, 275, text="Oficina", font=("Arial", int(8)), fill="black")
     #Taller
-    canvas.create_rectangle(260 * escala, 250 * escala, 300 * escala, 300 * escala,
+    canvas.create_rectangle(260, 250, 300, 300,
                              outline="red", width=2, fill="lightgray", tags="maquinaria")
-    canvas.create_text(280 * escala, 275 * escala, text="Taller", font=("Arial", int(8 * escala)), fill="black")
+    canvas.create_text(280, 275, text="Taller", font=("Arial", int(8)), fill="black")
 
-    # Dibujar la zona de silos
-    canvas.create_oval(100 * escala, 100 * escala, 150 * escala, 150 * escala,
-                       outline="blue", width=2, fill="lightblue", tags="Silo Interno")
-    canvas.create_text(125 * escala, 125 * escala, text="Silos\nInterno", font=("Arial", int(8 * escala)), fill="black")
-    canvas.create_oval(48 * escala, 100 * escala, 98 * escala, 150 * escala,
-                       outline="blue", width=2, fill="lightblue", tags="Silo 1")
-    canvas.create_text(73 * escala, 125 * escala, text="Silos 1", font=("Arial", int(8 * escala)), fill="black")
-    canvas.create_oval(48 * escala, 250 * escala, 98 * escala, 300 * escala,
-                       outline="blue", width=2, fill="lightblue", tags="Silo 2")
-    canvas.create_text(73 * escala, 275 * escala, text="Silos 2", font=("Arial", int(8 * escala)), fill="black")
+     # Coordenadas de los 3 silos
+    coordenadas = [
+        (100, 100, 150, 150),  # Silo Interno
+        (48, 100, 98, 150),    # Silo 1
+        (48, 250, 98, 300)     # Silo 2
+    ]
+    # Dibujar los silos usando un for
+    for i, coords in enumerate(coordenadas, start=1):
+        x1, y1, x2, y2 = coords
+        silo_tag = f"Silo {i}"  # Tag único para cada silo
+        
+        # Dibujar el óvalo
+        canvas.create_oval(x1, y1, x2, y2, outline="blue", width=2, fill="lightblue", tags=silo_tag)
+        # Dibujar el texto
+        canvas.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=f"Silos {i}", font=("Arial", 8), fill="black")
 
 # Función para cargar calidad
 def calidad():
@@ -313,6 +319,8 @@ def agregar_calidad(i, j):
     if calidad_data:
         celda_info[(i, j)]['Calidad'] = calidad_data
         messagebox.showinfo("Información", "Análisis de calidad agregado correctamente.")
+
+
 
 
 # Crear el botón de ingreso
